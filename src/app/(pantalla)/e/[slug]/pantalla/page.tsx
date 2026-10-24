@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
@@ -40,7 +41,8 @@ async function Screen({ params }: PageProps<"/e/[slug]/pantalla">) {
       </div>
 
       <div>
-        <p className="text-2xl font-semibold text-primary-bright">Escaneá y sumate en {APP_NAME}</p>
+        <Image src="/tiki-logo.png" alt={APP_NAME} width={1266} height={402} priority className="mb-6 h-14 w-auto" />
+        <p className="text-2xl font-semibold text-primary-bright">Escaneá y sumate</p>
         <h1 className="mt-3 font-display text-5xl font-extrabold tracking-tight text-balance lg:text-7xl">
           {event.title}
         </h1>

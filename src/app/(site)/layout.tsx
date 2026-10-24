@@ -1,5 +1,6 @@
+import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Users } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { APP_NAME } from "@/lib/config";
 
 export default function SiteLayout({ children }: { children: React.ReactNode }) {
@@ -7,9 +8,8 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
     <>
       <header className="sticky top-0 z-30 border-b border-white/10 bg-background/80 backdrop-blur">
         <nav className="mx-auto flex h-16 w-full max-w-2xl items-center justify-between gap-3 px-4">
-          <Link href="/" className="flex items-center gap-2 font-display text-xl font-extrabold tracking-tight">
-            <Users aria-hidden className="size-5 text-primary-bright" />
-            {APP_NAME}
+          <Link href="/" className="flex min-h-11 items-center">
+            <Image src="/tiki-logo.png" alt={APP_NAME} width={1266} height={402} priority className="h-8 w-auto" />
           </Link>
           <div className="flex items-center gap-1">
             <Link
