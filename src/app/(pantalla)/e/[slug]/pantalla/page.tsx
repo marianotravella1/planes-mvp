@@ -37,9 +37,6 @@ async function Screen({ params }: PageProps<"/e/[slug]/pantalla">) {
           aria-label={`Código QR para sumarse a ${event.title}`}
           dangerouslySetInnerHTML={{ __html: qr }}
         />
-        <p className="mt-5 text-center font-display text-3xl font-extrabold break-all lg:text-4xl">
-          {url.replace(/^https?:\/\//, "")}
-        </p>
       </div>
 
       <div>
