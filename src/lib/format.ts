@@ -1,4 +1,4 @@
-import { TIME_ZONE } from "./config";
+import { ARGENTINA_UTC_OFFSET, TIME_ZONE } from "./config";
 
 const dayKeyFormat = new Intl.DateTimeFormat("en-CA", {
   timeZone: TIME_ZONE,
@@ -41,6 +41,16 @@ export function formatDay(date: Date, now = new Date()) {
 /** "Hoy, 18:45" */
 export function formatWhen(date: Date, now = new Date()) {
   return `${formatDay(date, now)}, ${formatTime(date)}`;
+}
+
+/** "Sábado 25 de octubre, 18:45". Sin "Hoy" ni "Mañana", para textos que se pueden leer otro día. */
+export function formatDateTime(date: Date) {
+  return `${capitalize(longDayFormat.format(date))}, ${formatTime(date)}`;
+}
+
+/** "2026-10-25T18:45:00-03:00": ISO 8601 con la hora de Argentina. */
+export function formatIsoLocal(date: Date) {
+  return `${dayKey(date)}T${formatTime(date)}:00${ARGENTINA_UTC_OFFSET}`;
 }
 
 export function firstName(name: string) {

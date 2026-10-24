@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { ArrowRight, CalendarClock, Coins, MapPin } from "lucide-react";
 import { capacityLabel } from "@/components/capacity";
+import { ConnectClaude } from "@/components/connect-claude";
 import { formatWhen } from "@/lib/format";
 import { getUpcomingEvents } from "@/lib/queries";
 import { eventPath } from "@/lib/site";
@@ -36,6 +37,10 @@ export default function HomePage() {
           <UpcomingEvents />
         </Suspense>
       </section>
+
+      <Suspense fallback={<div className="card h-48 animate-pulse" />}>
+        <ConnectClaude />
+      </Suspense>
 
       <section className="card-glow flex items-start gap-4">
         <Coins aria-hidden className="mt-1 size-7 shrink-0 text-primary-bright" />

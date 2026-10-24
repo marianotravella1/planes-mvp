@@ -6,13 +6,14 @@ import { getSessionUser } from "@/lib/auth";
 import { currentDeviceHash } from "@/lib/device";
 import { dayKey } from "@/lib/format";
 import { formatPhone } from "@/lib/phone";
+import { readPlanDraft } from "@/lib/plan-draft";
 import { getDeviceParticipant, getHostProfile } from "@/lib/queries";
 import { createEvent } from "./actions";
 import { CreateEventForm } from "./create-event-form";
 
 export const metadata: Metadata = { title: "Armar un plan" };
 
-export default function CreatePage() {
+export default function CreatePage({ searchParams }: PageProps<"/crear">) {
   return (
     <>
       <h1 className="font-display text-4xl font-extrabold tracking-tight">
@@ -22,17 +23,19 @@ export default function CreatePage() {
         Lo publicás, compartís el link o el QR y se suma gente con ganas de lo mismo.
       </p>
       <Suspense fallback={<div className="card h-96 animate-pulse" />}>
-        <CreateContent />
+        <CreateContent searchParams={searchParams} />
       </Suspense>
     </>
   );
 }
 
-async function CreateContent() {
+async function CreateContent({ searchParams }: Pick<PageProps<"/crear">, "searchParams">) {
   await connection();
+  // Un plan que llega armado desde el chat (create_plan del MCP): sobrevive al inicio de sesión.
+  const draft = readPlanDraft(await searchParams);
   const user = await getSessionUser();
 
-  if (!user) return <LoginCard next="/crear" />;
+  if (!user) return <LoginCard next={draft ? `/crear?${draft.query}` : "/crear"} />;
 
   const [host, me] = await Promise.all([
     getHostProfile(user.id),
@@ -53,10 +56,16 @@ async function CreateContent() {
           </button>
         </form>
       </div>
+      {draft && (
+        <p className="card mb-6 border-primary/40 text-muted" role="status">
+          Este plan llegó armado desde el chat. Revisalo y tocá Publicar.
+        </p>
+      )}
       <CreateEventForm
         action={createEvent}
         mode="create"
         today={dayKey(new Date())}
+        initial={draft?.initial}
         hostLocked={Boolean(host)}
         knownName={known?.name ?? ""}
         knownPhone={known ? formatPhone(known.phoneE164) : ""}

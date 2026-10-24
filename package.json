@@ -10,19 +10,24 @@
     "typecheck": "tsc --noEmit",
     "db:up": "docker compose up -d",
     "db:migrate": "node --env-file=.env.local scripts/db.mjs migrate",
-    "db:reset": "node --env-file=.env.local scripts/db.mjs reset"
+    "db:reset": "node --env-file=.env.local scripts/db.mjs reset",
+    "test:mcp": "node --env-file=.env.local --test scripts/mcp.test.mjs"
   },
   "dependencies": {
+    "@modelcontextprotocol/server": "2.3.1",
     "jsqr": "1.4.0",
     "libphonenumber-js": "^1.13.15",
     "lucide-react": "^1.61.0",
+    "mcp-handler": "2.3.0",
     "next": "16.3.1",
     "postgres": "^3.4.9",
     "qrcode": "^1.5.4",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "zod": "4.6.5"
   },
   "devDependencies": {
+    "@modelcontextprotocol/client": "2.3.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/qrcode": "^1.5.5",
