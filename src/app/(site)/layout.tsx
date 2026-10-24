@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Coins, Users } from "lucide-react";
+import { ArrowRight, Users } from "lucide-react";
 import { APP_NAME } from "@/lib/config";
 
 export default function SiteLayout({ children }: { children: React.ReactNode }) {
@@ -12,13 +12,6 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
             {APP_NAME}
           </Link>
           <div className="flex items-center gap-1">
-            <Link
-              href="/puntos"
-              className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2.5 text-sm font-semibold whitespace-nowrap text-muted hover:text-foreground"
-            >
-              <Coins aria-hidden className="size-4" />
-              Puntos
-            </Link>
             <Link
               href="/crear"
               className="inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-semibold whitespace-nowrap text-white shadow-[0_0_20px_rgb(220_38_38/0.35)] hover:bg-primary-hover"

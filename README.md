@@ -1,4 +1,4 @@
-# Planes (nombre provisorio)
+# Tiki
 
 MVP armado para [Shippear 3.0](https://shippe.ar) (Rosario, 24 de octubre de 2026). Publicás un plan, lo compartís por WhatsApp o con un QR y se suma gente que no conocés pero tiene ganas de lo mismo. Cada vez que alguien se suma a un plan gana puntos para canjear por descuentos en negocios asociados.
 

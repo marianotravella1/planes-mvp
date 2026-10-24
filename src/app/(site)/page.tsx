@@ -15,25 +15,20 @@ export default function HomePage() {
           <span className="text-gradient">Armá un plan</span> y sumá gente con ganas de lo mismo
         </h1>
         <p className="mt-5 text-lg text-muted">
-          Un partido al que le falta gente o una birra después del laburo. Lo publicás, lo compartís por WhatsApp o con
-          un QR y se suma quien quiera. Para sumarse no hace falta cuenta.
+          Un partido al que le falta gente o una birra después del laburo. Lo publicás y se suma quien quiera. Para
+          sumarse no hace falta cuenta.
         </p>
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-          <Link href="/crear" className="btn-primary text-lg">
-            Armar un plan
-            <ArrowRight aria-hidden className="size-5" />
-          </Link>
-          <Link href="#planes" className="btn-secondary text-lg">
-            Ver planes
-          </Link>
-        </div>
+        <Link href="/crear" className="btn-primary mt-8 w-full text-lg sm:w-auto">
+          Armar un plan
+          <ArrowRight aria-hidden className="size-5" />
+        </Link>
         <p className="mt-6 flex items-center gap-2 text-sm text-muted">
           <span aria-hidden className="size-2 rounded-full bg-success shadow-[0_0_8px_rgb(34_197_94/0.8)]" />
           Cada plan al que te sumás te da puntos para canjear
         </p>
       </section>
 
-      <section id="planes" aria-labelledby="upcoming-title" className="scroll-mt-20">
+      <section aria-labelledby="upcoming-title">
         <h2 id="upcoming-title" className="font-display text-2xl font-extrabold">
           Planes que vienen
         </h2>
@@ -49,10 +44,6 @@ export default function HomePage() {
           <p className="mt-1 text-muted">
             Cuando te sumás a un plan ganás puntos para canjear por descuentos en lugares aliados.
           </p>
-          <Link href="/puntos" className="mt-3 inline-flex min-h-11 items-center gap-1 font-semibold text-primary-bright">
-            Ver beneficios
-            <ArrowRight aria-hidden className="size-4" />
-          </Link>
         </div>
       </section>
     </div>
