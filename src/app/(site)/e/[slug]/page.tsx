@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { CalendarClock, MapPin, Monitor, Navigation, PartyPopper } from "lucide-react";
+import { CalendarClock, CircleCheck, MapPin, Monitor, Navigation, PartyPopper } from "lucide-react";
 import { Capacity } from "@/components/capacity";
 import { ShareActions } from "@/components/share-actions";
 import { currentDeviceHash } from "@/lib/device";
@@ -144,7 +144,10 @@ async function EventContent({ params, searchParams }: PageProps<"/e/[slug]">) {
 
       <JoinSection
         joinAction={joinEvent.bind(null, slug)}
+        slug={slug}
         pointsReward={event.pointsReward}
+        encountersOpen={event.encountersOpen}
+        checkedIn={Boolean(me && members.some((member) => member.participantId === me.id && member.checkedIn))}
         isMember={isMember}
         isHost={isHost}
         isFull={isFull}
@@ -173,6 +176,7 @@ async function EventContent({ params, searchParams }: PageProps<"/e/[slug]">) {
               >
                 {initials(member.name)}
               </span>
+              {member.checkedIn && <CircleCheck aria-label="Llegó" className="-mr-1 size-4 text-success" />}
               <span className="font-medium">
                 {firstName(member.name)}
                 {(member.role === "host" || me?.id === member.participantId) && (

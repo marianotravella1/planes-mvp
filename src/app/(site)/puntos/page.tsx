@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { Coins, Store, Ticket } from "lucide-react";
 import { currentDeviceHash } from "@/lib/device";
 import { firstName, formatTime, formatWhen } from "@/lib/format";
-import { getActiveRedemptions, getDeviceParticipant, getLedger, getRewards } from "@/lib/queries";
+import { getActiveRedemptions, getDeviceParticipant, getLedger, getRewards, type LedgerEntry } from "@/lib/queries";
 import { RedeemButton } from "./redeem-button";
 
 export const metadata: Metadata = { title: "Mis puntos" };
@@ -90,13 +90,7 @@ async function Wallet() {
             {ledger.map((entry) => (
               <li key={entry.id} className="flex items-center justify-between gap-4 py-3">
                 <span>
-                  <span className="block font-medium">
-                    {entry.reason === "join_event"
-                      ? entry.eventTitle
-                        ? `Te sumaste a ${entry.eventTitle}`
-                        : "Puntos por sumarte a un plan"
-                      : `Canje: ${entry.rewardTitle ?? "beneficio"}`}
-                  </span>
+                  <span className="block font-medium">{ledgerLabel(entry)}</span>
                   <span className="block text-sm text-muted">{formatWhen(entry.createdAt)}</span>
                 </span>
                 <span className={`font-display text-xl font-bold tabular-nums ${entry.delta > 0 ? "text-primary-bright" : "text-foreground"}`}>
@@ -145,4 +139,20 @@ function RewardsList({ rewards, balance, canRedeem }: RewardsListProps) {
       </ul>
     </section>
   );
+}
+
+function ledgerLabel(entry: LedgerEntry) {
+  const plan = entry.eventTitle ?? "un plan";
+  switch (entry.reason) {
+    case "attended_event":
+      return `Llegaste a ${plan}`;
+    case "met_person":
+      return `Conociste a alguien en ${plan}`;
+    case "removed_from_event":
+      return `Te quitaron de ${plan}`;
+    case "join_event":
+      return `Te sumaste a ${plan}`;
+    default:
+      return `Canje: ${entry.rewardTitle ?? "beneficio"}`;
+  }
 }

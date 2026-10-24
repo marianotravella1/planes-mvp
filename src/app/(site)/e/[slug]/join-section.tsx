@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, CircleCheck, Coins } from "lucide-react";
+import { ArrowRight, CircleCheck, Coins, ScanLine } from "lucide-react";
 import { WhatsappIcon } from "@/components/whatsapp-icon";
 import { whatsappShareUrl } from "@/lib/share";
 import type { JoinState } from "./actions";
@@ -10,7 +10,11 @@ import { PointsDialog } from "./points-dialog";
 
 type Props = {
   joinAction: (prev: JoinState, formData: FormData) => Promise<JoinState>;
+  slug: string;
   pointsReward: number;
+  // Desde 2 horas antes del plan se puede confirmar la llegada con un encuentro.
+  encountersOpen: boolean;
+  checkedIn: boolean;
   isMember: boolean;
   isHost: boolean;
   isFull: boolean;
@@ -35,7 +39,9 @@ export function JoinSection(props: Props) {
 
   return (
     <section aria-labelledby="join-title" className={joined ? "card" : "card-glow"}>
-      {state.status === "joined" && <PointsDialog key={state.at} result={state} inviteUrl={inviteUrl} />}
+      {state.status === "joined" && (
+        <PointsDialog key={state.at} result={state} inviteUrl={inviteUrl} pointsReward={props.pointsReward} />
+      )}
 
       {joined ? (
         <div className="space-y-4">
@@ -43,6 +49,27 @@ export function JoinSection(props: Props) {
             <CircleCheck aria-hidden className="size-7 text-success" />
             {props.isHost ? "Organizás este plan" : "Ya estás en la lista"}
           </h2>
+          {props.checkedIn ? (
+            <Link href={`/e/${props.slug}/llegue`} className="btn-secondary w-full">
+              <ScanLine aria-hidden className="size-5 text-primary-bright" />
+              Ya llegaste. Conocé a alguien más
+            </Link>
+          ) : props.encountersOpen ? (
+            <div className="space-y-2">
+              <Link href={`/e/${props.slug}/llegue`} className="btn-primary w-full text-lg">
+                <ScanLine aria-hidden className="size-5" />
+                Llegué
+              </Link>
+              <p className="text-sm text-muted">
+                Escaneá el QR de alguien del plan para confirmar que llegaste y sumar {props.pointsReward} puntos.
+              </p>
+            </div>
+          ) : (
+            <p className="text-muted">
+              Cuando llegues al lugar, tocá Llegué y escaneá el QR de alguien del plan para sumar{" "}
+              {props.pointsReward} puntos.
+            </p>
+          )}
           <a href={inviteUrl} target="_blank" rel="noopener noreferrer" className="btn-secondary w-full">
             <WhatsappIcon className="size-5" />
             Invitar por WhatsApp
@@ -77,7 +104,7 @@ export function JoinSection(props: Props) {
             {props.pointsReward > 0 && (
               <p className="mt-1 flex items-center gap-2 text-muted">
                 <Coins aria-hidden className="size-5 shrink-0 text-primary-bright" />
-                Sumás {props.pointsReward} puntos para canjear en lugares aliados.
+                Cuando llegues y te encuentres con alguien del plan, sumás {props.pointsReward} puntos.
               </p>
             )}
           </div>

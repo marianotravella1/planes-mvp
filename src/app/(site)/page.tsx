@@ -24,7 +24,7 @@ export default function HomePage() {
         </Link>
         <p className="mt-6 flex items-center gap-2 text-sm text-muted">
           <span aria-hidden className="size-2 rounded-full bg-success shadow-[0_0_8px_rgb(34_197_94/0.8)]" />
-          Cada plan al que te sumás te da puntos para canjear
+          Cada plan al que vas te da puntos para canjear
         </p>
       </section>
 
@@ -42,7 +42,7 @@ export default function HomePage() {
         <div>
           <h2 className="font-display text-xl font-extrabold">Cada plan suma puntos</h2>
           <p className="mt-1 text-muted">
-            Cuando te sumás a un plan ganás puntos para canjear por descuentos en lugares aliados.
+            Cuando llegás a un plan y te encontrás con alguien, ganás puntos para canjear por descuentos en lugares aliados.
           </p>
         </div>
       </section>

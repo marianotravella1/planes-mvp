@@ -20,6 +20,8 @@ export type EventDetail = {
   membersCount: number;
   // Mismo criterio que app.join_event: pasadas 6 horas del inicio ya no se puede sumar nadie.
   isFinished: boolean;
+  // Mismo criterio que app.record_encounter: desde 2 horas antes hasta 6 horas después del inicio.
+  encountersOpen: boolean;
 };
 
 export async function getEvent(slug: string) {
@@ -29,7 +31,8 @@ export async function getEvent(slug: string) {
       e.starts_at, e.capacity, e.points_reward, e.host_id,
       h.name as host_name,
       (select count(*)::int from app.event_members m where m.event_id = e.id) as members_count,
-      e.starts_at < now() - interval '6 hours' as is_finished
+      e.starts_at < now() - interval '6 hours' as is_finished,
+      now() between e.starts_at - interval '2 hours' and e.starts_at + interval '6 hours' as encounters_open
     from app.events e
     join app.participants h on h.id = e.host_id
     where e.slug = ${slug}
@@ -37,11 +40,11 @@ export async function getEvent(slug: string) {
   return event ?? null;
 }
 
-export type EventMember = { participantId: string; name: string; role: "host" | "guest" };
+export type EventMember = { participantId: string; name: string; role: "host" | "guest"; checkedIn: boolean };
 
 export function getEventMembers(eventId: string) {
   return db()<EventMember[]>`
-    select m.participant_id, p.name, m.role
+    select m.participant_id, p.name, m.role, m.checked_in_at is not null as checked_in
     from app.event_members m
     join app.participants p on p.id = m.participant_id
     where m.event_id = ${eventId}
@@ -49,13 +52,21 @@ export function getEventMembers(eventId: string) {
   `;
 }
 
-export type EventStats = { count: number; capacity: number | null; recentNames: string[] };
+export type EventStats = {
+  count: number;
+  capacity: number | null;
+  recentNames: string[];
+  checkedIn: number;
+  encounters: number;
+};
 
 export async function getEventStats(slug: string) {
   const [stats] = await db()<EventStats[]>`
     select
       e.capacity,
       (select count(*)::int from app.event_members m where m.event_id = e.id) as count,
+      (select count(*)::int from app.event_members m where m.event_id = e.id and m.checked_in_at is not null) as checked_in,
+      (select count(*)::int from app.encounters en where en.event_id = e.id) as encounters,
       array(
         select p.name
         from app.event_members m
@@ -150,7 +161,7 @@ export function getRewards() {
 export type LedgerEntry = {
   id: string;
   delta: number;
-  reason: "join_event" | "redeem_reward";
+  reason: "join_event" | "redeem_reward" | "removed_from_event" | "attended_event" | "met_person";
   createdAt: Date;
   eventTitle: string | null;
   eventSlug: string | null;
@@ -215,4 +226,40 @@ export async function getRedemption(code: string, participantId: string) {
     where rd.code = ${code} and rd.participant_id = ${participantId}
   `;
   return redemption ?? null;
+}
+
+export type MyEncounters = {
+  checkedIn: boolean;
+  points: number;
+  encounters: { id: string; name: string; scannedByMe: boolean }[];
+};
+
+/** Con quién se encontró una persona en un plan y cuántos puntos sumó ahí. */
+export async function getMyEncounters(eventId: string, participantId: string): Promise<MyEncounters> {
+  const [summary] = await db()<{ checkedIn: boolean; points: number }[]>`
+    select
+      m.checked_in_at is not null as checked_in,
+      coalesce((
+        select sum(l.delta) from app.points_ledger l
+        where l.participant_id = m.participant_id and l.event_id = m.event_id
+          and l.reason in ('attended_event', 'met_person', 'removed_from_event')
+      ), 0)::int as points
+    from app.event_members m
+    where m.event_id = ${eventId} and m.participant_id = ${participantId}
+  `;
+  const encounters = await db()<MyEncounters["encounters"]>`
+    select en.id, p.name, en.scanned_by = ${participantId} as scanned_by_me
+    from app.encounters en
+    join app.participants p
+      on p.id = case when en.participant_a = ${participantId} then en.participant_b else en.participant_a end
+    where en.event_id = ${eventId}
+      and (en.participant_a = ${participantId} or en.participant_b = ${participantId})
+    order by en.created_at
+  `;
+  return { checkedIn: summary?.checkedIn ?? false, points: summary?.points ?? 0, encounters };
+}
+
+export async function getParticipantName(participantId: string) {
+  const [row] = await db()<{ name: string }[]>`select p.name from app.participants p where p.id = ${participantId}`;
+  return row?.name ?? null;
 }

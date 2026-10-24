@@ -9,7 +9,15 @@ import type { JoinState } from "./actions";
 type Joined = Extract<JoinState, { status: "joined" }>;
 
 /** El cartel que aparece al sumarse: cuántos puntos sumó y cuántos tiene en total. */
-export function PointsDialog({ result, inviteUrl }: { result: Joined; inviteUrl: string }) {
+export function PointsDialog({
+  result,
+  inviteUrl,
+  pointsReward,
+}: {
+  result: Joined;
+  inviteUrl: string;
+  pointsReward: number;
+}) {
   const dialog = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -21,7 +29,10 @@ export function PointsDialog({ result, inviteUrl }: { result: Joined; inviteUrl:
   const earned = result.pointsAwarded > 0;
 
   let title = "¡Listo, estás en la lista!";
-  let detail: string | null = null;
+  let detail: string | null =
+    pointsReward > 0
+      ? `Cuando llegues, tocá Llegué y escaneá el QR de otra persona del plan. Así se confirma que fuiste y sumás ${pointsReward} puntos.`
+      : null;
   if (result.alreadyMember) {
     title = "Ya estabas en la lista";
     detail = "Los puntos de este plan ya los sumaste.";
