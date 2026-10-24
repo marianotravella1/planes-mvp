@@ -156,7 +156,7 @@ describe("tools", () => {
 
     // Sin sesión, /crear pide entrar y conserva el plan para después del ingreso.
     const page = await (await fetch(new URL(link.pathname + link.search, MCP_URL))).text();
-    assert.match(page, /Creá tu cuenta para organizar/);
+    assert.match(page, /Entrá para armar el plan/);
     assert.match(page, /name="next" value="\/crear\?titulo=/);
   });
 });

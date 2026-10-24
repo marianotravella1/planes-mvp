@@ -6,9 +6,12 @@ import { authenticate, type AuthMode, type AuthState } from "@/app/auth/actions"
 
 type Props = { next: string };
 
-/** Ingreso con usuario y contraseña, sin mails. Crear la cuenta y entrar son la misma pantalla. */
+/**
+ * Ingreso con usuario y contraseña, sin mails. Crear la cuenta y entrar son la misma pantalla:
+ * arranca en Entrar, y quien no tiene cuenta la crea desde el link de abajo.
+ */
 export function LoginCard({ next }: Props) {
-  const [state, formAction, pending] = useActionState<AuthState, FormData>(authenticate, { mode: "signup" });
+  const [state, formAction, pending] = useActionState<AuthState, FormData>(authenticate, { mode: "login" });
   const [mode, setMode] = useState<AuthMode>(state.mode);
   const [showPassword, setShowPassword] = useState(false);
   const signup = mode === "signup";
