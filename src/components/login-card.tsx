@@ -1,127 +1,117 @@
 "use client";
 
-import { useActionState } from "react";
-import { ArrowRight, Mail } from "lucide-react";
-import { authenticate, type OtpState } from "@/app/auth/actions";
+import { useActionState, useState } from "react";
+import { ArrowRight, Eye, EyeOff } from "lucide-react";
+import { authenticate, type AuthMode, type AuthState } from "@/app/auth/actions";
 
-type Props = { next: string; linkFailed?: boolean };
+type Props = { next: string };
 
-/** Ingreso sin contraseña en dos pasos: mail y después el código que llega a ese mail. */
-export function LoginCard({ next, linkFailed }: Props) {
-  const [state, formAction, pending] = useActionState<OtpState, FormData>(authenticate, { status: "idle" });
-
-  if (state.status === "code_sent") {
-    return (
-      <section className="card-glow" aria-labelledby="login-title">
-        <h2 id="login-title" className="font-display text-2xl font-extrabold">
-          Escribí el código
-        </h2>
-        <p className="mt-2 text-muted">
-          Te lo mandamos a <strong className="text-foreground">{state.email}</strong>. Si no aparece, fijate en spam.
-        </p>
-
-        <form action={formAction} className="mt-5 space-y-4" noValidate>
-          <input type="hidden" name="email" value={state.email} />
-          <input type="hidden" name="next" value={next} />
-          <div>
-            <label htmlFor="token" className="field-label">
-              Código
-            </label>
-            <input
-              id="token"
-              name="token"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              pattern="[0-9]*"
-              maxLength={10}
-              autoFocus
-              className="input text-center font-display text-3xl font-extrabold tracking-[0.4em] tabular-nums"
-              aria-invalid={state.error ? true : undefined}
-              aria-describedby={state.error ? "token-error" : undefined}
-            />
-            {state.error && (
-              <p id="token-error" role="alert" className="field-error">
-                {state.error}
-              </p>
-            )}
-          </div>
-          <button type="submit" name="intent" value="verify" className="btn-primary w-full text-lg" disabled={pending}>
-            {pending ? "Verificando..." : "Entrar"}
-            {!pending && <ArrowRight aria-hidden className="size-5" />}
-          </button>
-          <div className="flex justify-between gap-3 text-sm">
-            <button
-              type="submit"
-              name="intent"
-              value="resend"
-              className="min-h-11 font-semibold text-primary-bright underline"
-              disabled={pending}
-            >
-              Mandarme otro código
-            </button>
-            <button
-              type="submit"
-              name="intent"
-              value="change"
-              className="min-h-11 font-semibold text-muted underline"
-              disabled={pending}
-            >
-              Cambiar el mail
-            </button>
-          </div>
-        </form>
-      </section>
-    );
-  }
-
-  const error = state.status === "error" ? state : null;
+/** Ingreso con usuario y contraseña, sin mails. Crear la cuenta y entrar son la misma pantalla. */
+export function LoginCard({ next }: Props) {
+  const [state, formAction, pending] = useActionState<AuthState, FormData>(authenticate, { mode: "signup" });
+  const [mode, setMode] = useState<AuthMode>(state.mode);
+  const [showPassword, setShowPassword] = useState(false);
+  const signup = mode === "signup";
 
   return (
     <section className="card-glow" aria-labelledby="login-title">
       <h2 id="login-title" className="font-display text-2xl font-extrabold">
-        Entrá para armar el plan
+        {signup ? "Creá tu cuenta para organizar" : "Entrá para armar el plan"}
       </h2>
       <p className="mt-2 text-muted">
-        Para organizar necesitás una cuenta, sin contraseña. Te mandamos un código al mail, lo escribís acá y listo. Para
-        sumarte a un plan no hace falta.
+        {signup
+          ? "Solo un usuario y una contraseña. Para sumarte a un plan no hace falta cuenta."
+          : "Con el usuario y la contraseña que elegiste."}
       </p>
-
-      {linkFailed && !error && (
-        <p role="alert" className="mt-4 rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-danger">
-          Ese link ya venció. Pedí un código nuevo.
-        </p>
-      )}
 
       <form action={formAction} className="mt-5 space-y-4" noValidate>
         <input type="hidden" name="next" value={next} />
+        <input type="hidden" name="mode" value={mode} />
         <div>
-          <label htmlFor="email" className="field-label">
-            Tu mail
+          <label htmlFor="username" className="field-label">
+            Usuario
           </label>
           <input
-            id="email"
-            name="email"
-            type="email"
-            inputMode="email"
-            autoComplete="email"
+            id="username"
+            name="username"
             className="input"
-            placeholder="vos@mail.com"
+            autoComplete="username"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            placeholder="valen.rosario"
+            maxLength={30}
             required
-            defaultValue={error?.email}
-            aria-invalid={error ? true : undefined}
-            aria-describedby={error ? "email-error" : undefined}
+            defaultValue={state.username}
+            aria-invalid={state.fieldErrors?.username ? true : undefined}
+            aria-describedby={state.fieldErrors?.username ? "username-error" : undefined}
           />
-          {error && (
-            <p id="email-error" className="field-error">
-              {error.message}
+          {state.fieldErrors?.username && (
+            <p id="username-error" className="field-error">
+              {state.fieldErrors.username}
             </p>
           )}
         </div>
-        <button type="submit" name="intent" value="send" className="btn-primary w-full text-lg" disabled={pending}>
-          <Mail aria-hidden className="size-5" />
-          {pending ? "Mandando..." : "Mandame el código"}
+        <div>
+          <label htmlFor="password" className="field-label">
+            Contraseña
+          </label>
+          <div className="relative">
+            <input
+              id="password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              className="input pr-14"
+              autoComplete={signup ? "new-password" : "current-password"}
+              required
+              minLength={6}
+              aria-invalid={state.fieldErrors?.password ? true : undefined}
+              aria-describedby={state.fieldErrors?.password ? "password-error" : "password-hint"}
+            />
+            <button
+              type="button"
+              className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-muted hover:text-foreground"
+              aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+              onClick={() => setShowPassword((value) => !value)}
+            >
+              {showPassword ? <EyeOff aria-hidden className="size-5" /> : <Eye aria-hidden className="size-5" />}
+            </button>
+          </div>
+          {state.fieldErrors?.password ? (
+            <p id="password-error" className="field-error">
+              {state.fieldErrors.password}
+            </p>
+          ) : (
+            signup && (
+              <p id="password-hint" className="field-hint">
+                Al menos 6 caracteres.
+              </p>
+            )
+          )}
+        </div>
+
+        {state.error && (
+          <p role="alert" className="rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 font-medium text-danger">
+            {state.error}
+          </p>
+        )}
+
+        <button type="submit" className="btn-primary w-full text-lg" disabled={pending}>
+          {pending ? "Un momento..." : signup ? "Crear cuenta" : "Entrar"}
+          {!pending && <ArrowRight aria-hidden className="size-5" />}
         </button>
       </form>
+
+      <p className="mt-4 text-center text-muted">
+        {signup ? "¿Ya tenés cuenta? " : "¿Primera vez? "}
+        <button
+          type="button"
+          className="min-h-11 font-semibold text-primary-bright underline"
+          onClick={() => setMode(signup ? "login" : "signup")}
+        >
+          {signup ? "Entrá" : "Creá una cuenta"}
+        </button>
+      </p>
     </section>
   );
 }

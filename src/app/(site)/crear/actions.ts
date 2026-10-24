@@ -1,13 +1,13 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { getSessionUser } from "@/lib/auth";
 import { ARGENTINA_UTC_OFFSET } from "@/lib/config";
 import { db, dbErrorMessage, isUniqueViolation } from "@/lib/db";
 import { ensureDeviceHash } from "@/lib/device";
 import { newEventSlug } from "@/lib/ids";
 import { normalizePhone } from "@/lib/phone";
 import { getHostProfile } from "@/lib/queries";
-import { getSessionUser } from "@/lib/supabase/server";
 
 export type CreateEventField =
   | "title"
@@ -48,7 +48,7 @@ export async function createEvent(_prev: CreateEventState, formData: FormData): 
   };
 
   const user = await getSessionUser();
-  if (!user) return { error: "Tu sesión venció. Volvé a entrar con el link que te mandamos al mail.", values };
+  if (!user) return { error: "Tu sesión venció. Volvé a entrar con tu usuario y contraseña.", values };
   const host = await getHostProfile(user.id);
 
   const placeName = text(formData.get("placeName")) || null;

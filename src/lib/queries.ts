@@ -110,10 +110,10 @@ export async function getDeviceParticipant(tokenHash: string | null) {
 
 export type HostProfile = { id: string; name: string; phoneE164: string };
 
-/** La persona vinculada a una cuenta de Supabase, si ya organizó algo. */
-export async function getHostProfile(authUserId: string) {
+/** La persona vinculada a una cuenta, si ya organizó algo. */
+export async function getHostProfile(accountId: string) {
   const [host] = await db()<HostProfile[]>`
-    select p.id, p.name, p.phone_e164 from app.participants p where p.auth_user_id = ${authUserId}
+    select p.id, p.name, p.phone_e164 from app.participants p where p.account_id = ${accountId}
   `;
   return host ?? null;
 }
