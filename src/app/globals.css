@@ -1,0 +1,112 @@
+@import "tailwindcss";
+
+/* Identidad tomada del template "Next.js boilerplate" de v0: fondo casi negro con un resplandor rojo,
+   títulos en Montserrat y botones rojos. Contrastes verificados con WCAG 2.x:
+   texto 19:1, texto secundario 7,9:1, blanco sobre el botón 4,8:1, rojo claro sobre el fondo 7,2:1. */
+@theme {
+  --color-background: #0a0a0a;
+  --color-card: #141414;
+  --color-foreground: #fafafa;
+  --color-muted: #a3a3a3;
+  --color-primary: #dc2626;
+  --color-primary-hover: #b91c1c;
+  --color-primary-bright: #f87171;
+  --color-danger: #fca5a5;
+  --color-success: #22c55e;
+  --color-line: #262626;
+  --color-line-strong: #737373;
+}
+
+@theme inline {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  /* Los selectores nativos de fecha y hora se ven oscuros. */
+  color-scheme: dark;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background-color: var(--color-background);
+  background-image:
+    radial-gradient(60rem 28rem at 15% -6rem, rgb(220 38 38 / 0.18), transparent 70%),
+    radial-gradient(40rem 24rem at 90% -4rem, rgb(220 38 38 / 0.1), transparent 70%);
+  background-repeat: no-repeat;
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary-bright);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Botones de 48 px de alto como mínimo, para tocarlos sin errar en el celular. */
+@utility btn-primary {
+  @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-primary px-5 [&_svg]:shrink-0 text-base font-semibold whitespace-nowrap text-white shadow-[0_0_28px_rgb(220_38_38/0.35)] transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+@utility btn-secondary {
+  @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/5 px-5 [&_svg]:shrink-0 text-base font-semibold whitespace-nowrap text-foreground transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+@utility card {
+  @apply rounded-2xl border border-white/10 bg-card/80 p-5 backdrop-blur-sm;
+}
+
+/* Tarjeta destacada con el degradé rojo del template. */
+@utility card-glow {
+  @apply rounded-2xl border border-primary/30 bg-linear-to-b from-primary/20 to-card p-5;
+}
+
+@utility text-gradient {
+  @apply bg-linear-to-r from-primary-bright to-primary bg-clip-text text-transparent;
+}
+
+@utility field-label {
+  @apply mb-1.5 block text-base font-semibold;
+}
+
+@utility field-hint {
+  @apply mt-1.5 text-sm text-muted;
+}
+
+@utility field-error {
+  @apply mt-1.5 text-sm font-medium text-danger;
+}
+
+@utility input {
+  @apply block min-h-12 w-full rounded-lg border border-line-strong bg-white/5 px-4 text-base text-foreground placeholder:text-muted focus:border-primary-bright focus:outline-2 focus:outline-primary-bright;
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-pop-in {
+  animation: pop-in 220ms ease-out both;
+}

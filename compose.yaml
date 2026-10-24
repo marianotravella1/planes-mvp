@@ -1,0 +1,22 @@
+# Postgres local para desarrollo. Misma versión mayor que usa Supabase (17).
+# Levantar con: docker compose up -d
+services:
+  db:
+    image: postgres:17
+    container_name: planes-mvp-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: planes
+    ports:
+      - "5433:5432"
+    volumes:
+      - planes-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d planes"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  planes-db-data:
