@@ -11,7 +11,7 @@ import { McpUserError, type McpReader } from "./guard";
 
 const PAGE_SIZE = 20;
 // Mismo mensaje para un código mal escrito y para un plan que no existe.
-export const PLAN_NOT_FOUND = "No encontramos ese plan. Usá list_plans para ver los planes y sus códigos.";
+export const PLAN_NOT_FOUND = "No encontramos ese plan. Usá find_plans_in_rosario para ver los planes y sus códigos.";
 
 /** El código del plan a partir del código o del link completo; null si no puede ser un plan. */
 export function planSlug(value: string) {
@@ -194,7 +194,7 @@ export type JoinPlanInput = { slug: string; name: string; phone: string };
 
 const JOIN_ERRORS: Record<string, string> = {
   event_not_found: PLAN_NOT_FOUND,
-  event_full: "El plan se llenó. Buscá otro con list_plans.",
+  event_full: "El plan se llenó. Buscá otro con find_plans_in_rosario.",
   event_finished: "Ese plan ya terminó.",
 };
 

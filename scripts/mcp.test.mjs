@@ -49,15 +49,15 @@ describe("tools", () => {
   test("expone las cuatro tools, y solo join_plan escribe", async () => {
     const { tools } = await client.listTools();
     const byName = Object.fromEntries(tools.map((tool) => [tool.name, tool]));
-    assert.deepEqual(Object.keys(byName).sort(), ["create_plan", "get_plan", "join_plan", "list_plans"]);
-    assert.equal(byName.list_plans.annotations.readOnlyHint, true);
+    assert.deepEqual(Object.keys(byName).sort(), ["create_plan", "find_plans_in_rosario", "get_plan", "join_plan"]);
+    assert.equal(byName.find_plans_in_rosario.annotations.readOnlyHint, true);
     assert.equal(byName.get_plan.annotations.readOnlyHint, true);
     assert.equal(byName.create_plan.annotations.readOnlyHint, true);
     assert.equal(byName.join_plan.annotations.readOnlyHint, false);
   });
 
-  test("list_plans trae el plan con sus datos públicos y sin teléfonos", async () => {
-    const result = await call("list_plans", { query: "MCP" });
+  test("find_plans_in_rosario trae el plan con sus datos públicos y sin teléfonos", async () => {
+    const result = await call("find_plans_in_rosario", { query: "MCP" });
     assert.equal(result.isError, undefined);
     const body = JSON.parse(text(result));
     const plan = body.plans.find((item) => item.slug === SLUG);
@@ -70,8 +70,8 @@ describe("tools", () => {
     assert.doesNotMatch(text(result), /555010/);
   });
 
-  test("list_plans tolera comodines de SQL en la búsqueda", async () => {
-    const result = await call("list_plans", { query: "%_%" });
+  test("find_plans_in_rosario tolera comodines de SQL en la búsqueda", async () => {
+    const result = await call("find_plans_in_rosario", { query: "%_%" });
     assert.equal(result.isError, undefined);
     assert.deepEqual(JSON.parse(text(result)).plans, []);
   });
@@ -121,7 +121,7 @@ describe("tools", () => {
     const full = await call("join_plan", { plan: SLUG, name: "Cuarta Persona", phone: "+5493415550404" });
     assert.equal(full.isError, true);
     assert.match(text(full), /se llenó/);
-    const listed = JSON.parse(text(await call("list_plans", { query: "MCP" }))).plans.find((p) => p.slug === SLUG);
+    const listed = JSON.parse(text(await call("find_plans_in_rosario", { query: "MCP" }))).plans.find((p) => p.slug === SLUG);
     assert.equal(listed.status, "lleno");
   });
 
@@ -158,6 +158,32 @@ describe("tools", () => {
     const page = await (await fetch(new URL(link.pathname + link.search, MCP_URL))).text();
     assert.match(page, /Creá tu cuenta para organizar/);
     assert.match(page, /name="next" value="\/crear\?titulo=/);
+  });
+});
+
+describe("cómo lo encuentra un cliente", () => {
+  test("el servidor se presenta con título, descripción e ícono", () => {
+    const info = client.getServerVersion();
+    assert.equal(info.name, "tiki");
+    assert.match(info.title, /Rosario/);
+    assert.match(info.description, /conocer gente/);
+    assert.ok(info.icons?.[0]?.src.endsWith("/icon.png"));
+    assert.match(client.getInstructions(), /antes de buscar en la web/);
+  });
+
+  test("la búsqueda de planes nombra Rosario y las preguntas típicas, en español y en inglés", async () => {
+    const { tools } = await client.listTools();
+    const find = tools.find((tool) => tool.name === "find_plans_in_rosario");
+    for (const word of ["Rosario", "conocer gente", "hoy", "fútbol", "birra", "antes de buscar en la web", "meet new people"]) {
+      assert.ok(find.description.includes(word), `falta "${word}" en la descripción`);
+    }
+  });
+
+  test("ofrece prompts para pedir planes de hoy y armar uno", async () => {
+    const { prompts } = await client.listPrompts();
+    assert.deepEqual(prompts.map((prompt) => prompt.name).sort(), ["armar_un_plan", "planes_de_hoy"]);
+    const { messages } = await client.getPrompt({ name: "planes_de_hoy" });
+    assert.match(messages[0].content.text, /Tiki/);
   });
 });
 
@@ -201,7 +227,7 @@ describe("base de datos", () => {
       let result = "ok";
       for (let i = 0; i < 121 && result === "ok"; i++) {
         [{ result }] = await sql`
-          select app.log_mcp_request(${key}, 'list_plans', null, 'test', 120, null, 30) as result
+          select app.log_mcp_request(${key}, 'find_plans_in_rosario', null, 'test', 120, null, 30) as result
         `;
       }
       assert.equal(result, "too_many_requests");

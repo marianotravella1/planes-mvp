@@ -1,7 +1,7 @@
 # MCP de Tiki: diseño
 
 **Fecha:** 2026-10-24
-**Estado:** v1 publicada en https://planes-mvp.vercel.app/api/mcp
+**Estado:** v1.1 publicada en https://planes-mvp.vercel.app/api/mcp
 **Alcance:** ver planes y sumarse sin cuenta; para crear un plan se pide iniciar sesión
 
 Sigue la estructura del diseño del MCP de HITT Process, adaptada a Tiki.
@@ -58,6 +58,27 @@ del código (ver §5).
    `claude mcp add --transport http tiki https://planes-mvp.vercel.app/api/mcp`. Para clientes que
    solo hablan stdio está `mcp-remote`.
 
+### Que el cliente elija Tiki
+
+En la primera prueba en claude.ai, a la pregunta "¿Qué planes hay para hacer hoy en Rosario para
+conocer gente nueva?" Claude buscó en la web y usó Tiki recién cuando se lo pidieron. Con varios
+conectores, claude.ai no carga todas las tools: las busca por nombre y descripción, y la tool se
+llamaba `list_plans`, sin Rosario ni preguntas típicas en la descripción. Desde la versión 1.1:
+
+- **Nombres y descripciones con las palabras de la pregunta.** La búsqueda se llama
+  `find_plans_in_rosario` y su descripción nombra Rosario, los tipos de plan (fútbol 5, pádel,
+  birras, salidas, juntadas) y las preguntas típicas (qué hacer hoy, esta noche o el finde, cómo
+  conocer gente o hacer amigos), con una línea en inglés para búsquedas en ese idioma.
+- **Cuándo usarla, dicho explícitamente:** la descripción y las instrucciones del servidor piden
+  consultar Tiki antes de buscar en la web para esas preguntas, y completar después con la web.
+- **El servidor se presenta** con título, descripción, web e ícono (`serverInfo` en
+  `src/app/api/mcp/route.ts`).
+- **Prompts** `planes_de_hoy` y `armar_un_plan`, para elegirlos desde el menú + de claude.ai cuando
+  se quiere ir directo a Tiki, por ejemplo en una demo.
+
+Del lado de quien usa Claude: las descripciones se leen al empezar un chat, así que después de un
+cambio conviene abrir un chat nuevo, con Tiki activado en el menú de herramientas.
+
 ### Crear un plan
 
 `create_plan` no escribe nada. Arma un link a `/crear` con el plan en la URL (`titulo`, `fecha`,
@@ -76,13 +97,16 @@ vinculado (si el número todavía no tenía uno) y desde ahí ve Llegué y suma 
 
 | Tool | Parámetros | Devuelve |
 |------|------------|----------|
-| `list_plans` | `query?`, `date?`, `past?`, `cursor?` | JSON: código, título, fecha ISO y legible, lugar, gente, lugares libres, estado y link de cada plan; `nextCursor` |
+| `find_plans_in_rosario` | `query?`, `date?`, `past?`, `cursor?` | JSON: código, título, fecha ISO y legible, lugar, gente, lugares libres, estado y link de cada plan; `nextCursor` |
 | `get_plan` | `plan` (código o link) | Markdown: detalle, cómo llegar, quién organiza, nombres de pila y quién llegó, cómo sumarse |
 | `join_plan` | `plan`, `name`, `phone` | Confirmación y link del plan para abrir en el celular |
 | `create_plan` | `title`, `date`, `time`, `address`, `placeName?`, `capacity?`, `description?` | Link para iniciar sesión y publicar el plan con el formulario completo |
 
-`list_plans`, `get_plan` y `create_plan` se anuncian como de solo lectura. `join_plan` no, y es
+`find_plans_in_rosario`, `get_plan` y `create_plan` se anuncian como de solo lectura. `join_plan` no, y es
 idempotente: anotarse dos veces no cambia nada.
+
+**Prompts:** `planes_de_hoy` y `armar_un_plan`. Solo devuelven el pedido para el modelo; no leen
+datos.
 
 **Fuera de v1 (a propósito):** puntos, beneficios y canjes; los planes de quien organiza; editar o
 borrar planes y quitar gente.
@@ -140,7 +164,7 @@ explicarle a la persona.
 
 | Caso | Respuesta |
 |------|-----------|
-| Plan inexistente o código mal escrito | "No encontramos ese plan. Usá list_plans..." (idéntico en los dos casos) |
+| Plan inexistente o código mal escrito | "No encontramos ese plan. Usá find_plans_in_rosario..." (idéntico en los dos casos) |
 | Plan lleno o terminado | "El plan se llenó..." o "Ese plan ya terminó." |
 | Teléfono que no se puede leer | "No pudimos leer ese teléfono..." |
 | Fecha pasada o a más de seis meses (`create_plan`) | "Ese horario ya pasó..." o "Elegí una fecha dentro de los próximos seis meses." |
@@ -151,7 +175,9 @@ explicarle a la persona.
 
 `npm run test:mcp`, con `npm run dev` corriendo, usa el cliente MCP oficial contra la base local:
 
-- Tools y anotaciones; búsqueda, comodines de SQL y paginación de `list_plans`.
+- Tools y anotaciones; búsqueda, comodines de SQL y paginación de `find_plans_in_rosario`.
+- Lo que ve un cliente para elegir Tiki: título, descripción e ícono del servidor, palabras clave de
+  la búsqueda de planes y prompts.
 - `get_plan` por código y por link, y el mismo error para un plan inexistente y uno inválido.
 - `join_plan` una sola vez, teléfono ilegible y plan lleno.
 - `create_plan` sin escrituras, y `/crear` sin sesión conservando el plan.
@@ -167,6 +193,7 @@ de punta a punta (buscar, sumarse y armar un plan).
 |--------|------------|
 | El link que abre el formulario de Claude no está documentado | Pasos a mano y URL para copiar en la misma tarjeta |
 | Alguien anota teléfonos ajenos o llena un plan con datos falsos | El mismo riesgo existe en la web; límite por IP y por plan; verificar el teléfono por SMS está en pendientes |
+| Claude contesta con la web sin consultar Tiki | Nombres, descripciones e instrucciones que dicen cuándo usar Tiki; prompts en el menú +; probar cada cambio con la misma pregunta en un chat nuevo |
 | Un plan con texto que intenta darle instrucciones al modelo | Instrucciones del servidor y descripción marcada como escrita por quien organiza |
 | Cambios en los requisitos de los clientes | MCP estándar con Streamable HTTP y respaldo para clientes de 2025 |
 
