@@ -10,9 +10,11 @@ import { currentDeviceHash } from "@/lib/device";
 import { firstName, formatWhen, initials } from "@/lib/format";
 import { googleMapsDirectionsUrl, googleMapsEmbedUrl } from "@/lib/maps";
 import { formatPhone } from "@/lib/phone";
-import { getDeviceParticipant, getEvent, getEventMembers } from "@/lib/queries";
+import { getSessionUser } from "@/lib/auth";
+import { getDeviceParticipant, getEvent, getEventMembers, getHostProfile } from "@/lib/queries";
 import { eventPath, qrSvg, siteUrl } from "@/lib/site";
 import { joinEvent } from "./actions";
+import { HostActions, RemoveMemberButton } from "./host-controls";
 import { JoinSection } from "./join-section";
 
 export async function generateMetadata({ params }: PageProps<"/e/[slug]">): Promise<Metadata> {
@@ -20,7 +22,8 @@ export async function generateMetadata({ params }: PageProps<"/e/[slug]">): Prom
   const { slug } = await params;
   const event = await getEvent(slug);
   if (!event) return { title: "Plan no encontrado" };
-  const count = event.capacity === null ? `Van ${event.membersCount}` : `Van ${event.membersCount} de ${event.capacity}`;
+  const count =
+    event.capacity === null ? `Van ${event.membersCount}` : `Van ${event.membersCount} de ${event.capacity}`;
   const description = `${formatWhen(event.startsAt)} en ${event.placeName ?? event.address}. ${count}.`;
   return { title: event.title, description, openGraph: { title: event.title, description } };
 }
@@ -39,16 +42,19 @@ async function EventContent({ params, searchParams }: PageProps<"/e/[slug]">) {
   const event = await getEvent(slug);
   if (!event) notFound();
 
-  const [me, members, baseUrl] = await Promise.all([
+  const [me, members, baseUrl, account] = await Promise.all([
     currentDeviceHash().then(getDeviceParticipant),
     getEventMembers(event.id),
     siteUrl(),
+    getSessionUser().then((user) => (user ? getHostProfile(user.id) : null)),
   ]);
 
   const url = `${baseUrl}${eventPath(slug)}`;
   const qr = await qrSvg(url);
   const isMember = Boolean(me && members.some((member) => member.participantId === me.id));
-  const isHost = me?.id === event.hostId;
+  // Para gestionar el plan hace falta la sesión de la cuenta que lo organiza.
+  const canManage = account?.id === event.hostId;
+  const isHost = canManage || me?.id === event.hostId;
   const isFull = event.capacity !== null && event.membersCount >= event.capacity;
   const when = formatWhen(event.startsAt);
   const where = event.placeName ?? event.address;
@@ -94,6 +100,8 @@ async function EventContent({ params, searchParams }: PageProps<"/e/[slug]">) {
         <h1 className="font-display text-4xl font-extrabold tracking-tight text-balance">{event.title}</h1>
         <p className="mt-2 text-lg text-muted">Organiza {firstName(event.hostName)}</p>
       </header>
+
+      {canManage && <HostActions slug={slug} />}
 
       {justCreated && share}
 
@@ -170,12 +178,17 @@ async function EventContent({ params, searchParams }: PageProps<"/e/[slug]">) {
                 {(member.role === "host" || me?.id === member.participantId) && (
                   <span className="text-muted">
                     {" "}
-                    ({[member.role === "host" && "organiza", me?.id === member.participantId && "vos"]
+                    (
+                    {[member.role === "host" && "organiza", me?.id === member.participantId && "vos"]
                       .filter(Boolean)
-                      .join(", ")})
+                      .join(", ")}
+                    )
                   </span>
                 )}
               </span>
+              {canManage && member.role !== "host" && (
+                <RemoveMemberButton slug={slug} participantId={member.participantId} name={firstName(member.name)} />
+              )}
             </li>
           ))}
         </ul>

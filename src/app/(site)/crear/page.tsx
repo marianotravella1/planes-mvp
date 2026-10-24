@@ -7,6 +7,7 @@ import { currentDeviceHash } from "@/lib/device";
 import { dayKey } from "@/lib/format";
 import { formatPhone } from "@/lib/phone";
 import { getDeviceParticipant, getHostProfile } from "@/lib/queries";
+import { createEvent } from "./actions";
 import { CreateEventForm } from "./create-event-form";
 
 export const metadata: Metadata = { title: "Armar un plan" };
@@ -53,6 +54,8 @@ async function CreateContent() {
         </form>
       </div>
       <CreateEventForm
+        action={createEvent}
+        mode="create"
         today={dayKey(new Date())}
         hostLocked={Boolean(host)}
         knownName={known?.name ?? ""}

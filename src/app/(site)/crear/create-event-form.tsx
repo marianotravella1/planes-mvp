@@ -3,10 +3,17 @@
 import { useActionState, useState } from "react";
 import { ArrowRight, Infinity as InfinityIcon, Minus, Plus, UsersRound } from "lucide-react";
 import { AddressInput } from "@/components/address-input";
-import { createEvent, type CreateEventField, type CreateEventState } from "./actions";
+import type { EventField, EventFormState } from "@/lib/event-form";
+
+type Place = { lat: number; lng: number };
 
 type Props = {
+  action: (prev: EventFormState, formData: FormData) => Promise<EventFormState>;
+  mode: "create" | "edit";
   today: string;
+  // Valores con los que arranca el formulario (al editar, los del plan).
+  initial?: Partial<Record<EventField, string>>;
+  initialPlace?: Place | null;
   // true si la cuenta ya tiene nombre y teléfono guardados: no se vuelven a pedir.
   hostLocked: boolean;
   knownName: string;
@@ -16,16 +23,25 @@ type Props = {
 const stepperButton =
   "inline-flex size-12 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/5 hover:bg-white/10";
 
-export function CreateEventForm({ today, hostLocked, knownName, knownPhone }: Props) {
-  const [state, formAction, pending] = useActionState<CreateEventState, FormData>(createEvent, {});
-  const values = state.values ?? {};
+export function CreateEventForm({
+  action,
+  mode,
+  today,
+  initial,
+  initialPlace,
+  hostLocked,
+  knownName,
+  knownPhone,
+}: Props) {
+  const [state, formAction, pending] = useActionState<EventFormState, FormData>(action, {});
+  const values = state.values ?? initial ?? {};
   const errors = state.fieldErrors ?? {};
   const [capacity, setCapacity] = useState(() => Number(values.capacity) || 6);
   const [unlimited, setUnlimited] = useState(values.capacityMode === "unlimited");
 
-  const errorProps = (field: CreateEventField) =>
+  const errorProps = (field: EventField) =>
     errors[field] ? { "aria-invalid": true, "aria-describedby": `${field}-error` } : {};
-  const errorText = (field: CreateEventField) =>
+  const errorText = (field: EventField) =>
     errors[field] ? (
       <p id={`${field}-error`} className="field-error">
         {errors[field]}
@@ -55,11 +71,10 @@ export function CreateEventForm({ today, hostLocked, knownName, knownPhone }: Pr
         </div>
 
         <div>
-          <label htmlFor="address" className="field-label">
-            Dónde
-          </label>
           <AddressInput
+            defaultPlaceName={values.placeName}
             defaultAddress={values.address}
+            defaultSelected={state.values ? null : initialPlace}
             invalid={Boolean(errors.address)}
             describedBy={errors.address ? "address-error" : undefined}
           />
@@ -188,7 +203,7 @@ export function CreateEventForm({ today, hostLocked, knownName, knownPhone }: Pr
         </div>
       </fieldset>
 
-      {hostLocked ? (
+      {mode === "edit" ? null : hostLocked ? (
         <p className="text-muted">
           Organizás como <strong className="text-foreground">{knownName}</strong> ({knownPhone}).
         </p>
@@ -245,7 +260,7 @@ export function CreateEventForm({ today, hostLocked, knownName, knownPhone }: Pr
       )}
 
       <button type="submit" className="btn-primary w-full text-lg" disabled={pending}>
-        {pending ? "Publicando..." : "Publicar el plan"}
+        {pending ? "Guardando..." : mode === "edit" ? "Guardar cambios" : "Publicar el plan"}
         {!pending && <ArrowRight aria-hidden className="size-5" />}
       </button>
     </form>

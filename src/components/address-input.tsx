@@ -4,18 +4,31 @@ import { useId, useRef, useState } from "react";
 import { MapPin } from "lucide-react";
 import type { PlaceSuggestion } from "@/app/api/places/route";
 
-type Selected = { placeName: string | null; lat: number; lng: number };
+type Selected = { lat: number; lng: number };
 
 type Props = {
+  defaultPlaceName?: string;
   defaultAddress?: string;
+  // Lugar ya elegido (al editar un plan), para no perder el punto en el mapa.
+  defaultSelected?: Selected | null;
   invalid?: boolean;
   describedBy?: string;
 };
 
-/** Campo de dirección con sugerencias. Si no se elige ninguna, se guarda el texto tal cual. */
-export function AddressInput({ defaultAddress = "", invalid, describedBy }: Props) {
+/**
+ * Nombre del lugar (lo que se muestra en grande, por ejemplo "La Bodeguita") y dirección con sugerencias
+ * (para el mapa). Si no se elige ninguna sugerencia, se guarda el texto tal cual.
+ */
+export function AddressInput({
+  defaultPlaceName = "",
+  defaultAddress = "",
+  defaultSelected = null,
+  invalid,
+  describedBy,
+}: Props) {
+  const [placeName, setPlaceName] = useState(defaultPlaceName);
   const [query, setQuery] = useState(defaultAddress);
-  const [selected, setSelected] = useState<Selected | null>(null);
+  const [selected, setSelected] = useState<Selected | null>(defaultSelected);
   const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
@@ -54,9 +67,13 @@ export function AddressInput({ defaultAddress = "", invalid, describedBy }: Prop
   function choose(suggestion: PlaceSuggestion) {
     clearTimeout(timer.current);
     controller.current?.abort();
-    const address = [suggestion.label, suggestion.detail].filter(Boolean).join(", ");
+    // Si la sugerencia es un lugar con nombre, el nombre va a su campo y la dirección queda limpia.
+    const address = suggestion.placeName
+      ? suggestion.detail || suggestion.label
+      : [suggestion.label, suggestion.detail].filter(Boolean).join(", ");
     setQuery(address.slice(0, 200));
-    setSelected({ placeName: suggestion.placeName, lat: suggestion.lat, lng: suggestion.lng });
+    if (suggestion.placeName) setPlaceName(suggestion.placeName.slice(0, 120));
+    setSelected({ lat: suggestion.lat, lng: suggestion.lng });
     setOpen(false);
     setLoading(false);
   }
@@ -80,75 +97,98 @@ export function AddressInput({ defaultAddress = "", invalid, describedBy }: Prop
   const showList = open && suggestions.length > 0;
 
   return (
-    <div>
-      <div className="relative">
+    <div className="space-y-5">
+      <div>
+        <label htmlFor="placeName" className="field-label">
+          Nombre del lugar <span className="font-normal text-muted">(opcional)</span>
+        </label>
         <input
-          id="address"
-          name="address"
+          id="placeName"
+          name="placeName"
           className="input"
-          role="combobox"
-          aria-autocomplete="list"
-          aria-expanded={showList}
-          aria-controls={listId}
-          aria-activedescendant={active >= 0 ? `${listId}-${active}` : undefined}
-          aria-invalid={invalid || undefined}
-          aria-describedby={describedBy}
-          autoComplete="off"
-          placeholder="Bar, cancha, plaza o dirección"
-          required
-          minLength={3}
-          maxLength={200}
-          value={query}
-          onChange={(event) => {
-            setQuery(event.target.value);
-            setSelected(null);
-            search(event.target.value);
-          }}
-          onKeyDown={onKeyDown}
-          onFocus={() => suggestions.length > 0 && setOpen(true)}
-          onBlur={() => setOpen(false)}
+          placeholder="La Bodeguita"
+          maxLength={120}
+          value={placeName}
+          onChange={(event) => setPlaceName(event.target.value)}
+          aria-describedby="placeName-hint"
         />
-        <input type="hidden" name="placeName" value={selected?.placeName ?? ""} />
-        <input type="hidden" name="lat" value={selected?.lat ?? ""} />
-        <input type="hidden" name="lng" value={selected?.lng ?? ""} />
-
-        {showList && (
-          <ul
-            id={listId}
-            role="listbox"
-            className="absolute inset-x-0 top-full z-20 mt-2 max-h-80 overflow-y-auto rounded-lg border border-white/15 bg-card py-1 shadow-2xl shadow-black/60"
-          >
-            {suggestions.map((suggestion, index) => (
-              <li
-                key={suggestion.id}
-                id={`${listId}-${index}`}
-                role="option"
-                aria-selected={index === active}
-                className={`flex cursor-pointer items-start gap-3 px-4 py-3 ${index === active ? "bg-primary/20" : "hover:bg-white/5"}`}
-                // mousedown en lugar de click para que el blur del input no cierre la lista antes.
-                onMouseDown={(event) => {
-                  event.preventDefault();
-                  choose(suggestion);
-                }}
-              >
-                <MapPin aria-hidden className="mt-0.5 size-5 shrink-0 text-primary-bright" />
-                <span>
-                  <span className="block font-semibold">{suggestion.label}</span>
-                  {suggestion.detail && <span className="block text-sm text-muted">{suggestion.detail}</span>}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
+        <p id="placeName-hint" className="field-hint">
+          Así se muestra en grande. Ponelo como lo conoce la gente.
+        </p>
       </div>
 
-      <p className="field-hint" aria-live="polite">
-        {loading
-          ? "Buscando direcciones..."
-          : selected
-            ? "Listo, el lugar queda marcado justo en el mapa de Google."
-            : "Elegí una sugerencia para marcar el lugar justo en el mapa. Sugerencias de OpenStreetMap."}
-      </p>
+      <div>
+        <label htmlFor="address" className="field-label">
+          Dirección
+        </label>
+        <div className="relative">
+          <input
+            id="address"
+            name="address"
+            className="input"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded={showList}
+            aria-controls={listId}
+            aria-activedescendant={active >= 0 ? `${listId}-${active}` : undefined}
+            aria-invalid={invalid || undefined}
+            aria-describedby={describedBy}
+            autoComplete="off"
+            placeholder="Calle y número, o buscá el lugar"
+            required
+            minLength={3}
+            maxLength={200}
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setSelected(null);
+              search(event.target.value);
+            }}
+            onKeyDown={onKeyDown}
+            onFocus={() => suggestions.length > 0 && setOpen(true)}
+            onBlur={() => setOpen(false)}
+          />
+          <input type="hidden" name="lat" value={selected?.lat ?? ""} />
+          <input type="hidden" name="lng" value={selected?.lng ?? ""} />
+
+          {showList && (
+            <ul
+              id={listId}
+              role="listbox"
+              className="absolute inset-x-0 top-full z-20 mt-2 max-h-80 overflow-y-auto rounded-lg border border-white/15 bg-card py-1 shadow-2xl shadow-black/60"
+            >
+              {suggestions.map((suggestion, index) => (
+                <li
+                  key={suggestion.id}
+                  id={`${listId}-${index}`}
+                  role="option"
+                  aria-selected={index === active}
+                  className={`flex cursor-pointer items-start gap-3 px-4 py-3 ${index === active ? "bg-primary/20" : "hover:bg-white/5"}`}
+                  // mousedown en lugar de click para que el blur del input no cierre la lista antes.
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    choose(suggestion);
+                  }}
+                >
+                  <MapPin aria-hidden className="mt-0.5 size-5 shrink-0 text-primary-bright" />
+                  <span>
+                    <span className="block font-semibold">{suggestion.label}</span>
+                    {suggestion.detail && <span className="block text-sm text-muted">{suggestion.detail}</span>}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <p className="field-hint" aria-live="polite">
+          {loading
+            ? "Buscando direcciones..."
+            : selected
+              ? "Listo, el lugar queda marcado justo en el mapa de Google."
+              : "Elegí una sugerencia para marcar el lugar justo en el mapa. Sugerencias de OpenStreetMap."}
+        </p>
+      </div>
     </div>
   );
 }
